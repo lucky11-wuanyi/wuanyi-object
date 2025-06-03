@@ -1,0 +1,30 @@
+import pandas as pd
+
+# 读取Excel文件
+df = pd.read_excel('D:/亚健康量化.xlsx')
+
+# 定义一个函数，用于判断是否为亚健康
+def judge_sub_health(psychological, physiological, social):
+    if physiological >= 15 and psychological >= 12 and social >= 11:
+        return '非亚健康'
+    else:
+        return '亚健康'
+
+# 判断每个数据是否是亚健康，并添加到新列中
+df['亚健康状态'] = df.apply(lambda x: judge_sub_health(x['心理亚健康子量表'], x['生理亚健康子量表'], x['社会亚健康子量表']), axis=1)
+
+# 判断具体的亚/健康类型，并添加到新列中
+df['心理健康状态'] = df['心理亚健康子量表'].apply(lambda x: '心理健康' if x >= 12 else '心理亚健康')
+df['生理健康状态'] = df['生理亚健康子量表'].apply(lambda x: '生理健康' if x >= 15 else '生理亚健康')
+df['社会健康状态'] = df['社会亚健康子量表'].apply(lambda x: '社会健康' if x >= 11 else '社会亚健康')
+
+# 计算“非亚健康”和“亚健康”的数量
+non_sub_health_count = df[df['亚健康状态'] == '非亚健康'].shape[0]
+sub_health_count = df[df['亚健康状态'] == '亚健康'].shape[0]
+
+# 输出结果
+print('非亚健康数量：', non_sub_health_count)
+print('亚健康数量：', sub_health_count)
+
+# 保存结果到新的Excel文件中
+df.to_excel('D:/亚健康量化结果.xlsx', index=False)

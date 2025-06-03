@@ -1,0 +1,44 @@
+import matplotlib.pyplot as plt
+
+# 设置matplotlib参数以使用支持中文的字体
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 或者其他支持中文的字体
+plt.rcParams['axes.unicode_minus'] = False  # 正确显示负号
+
+# 数据
+sizes = [28.05, 30.34, 32.41, 4.37, 4.83, 28.05, 30.34, 32.41, 4.37, 4.83]  # 各部分的百分比
+labels = ['20-29岁', '30-49岁', '50-64岁', '>65岁', '<20岁', '20-29岁', '30-49岁', '50-64岁', '>65岁', '<20岁']  # 年龄段标签
+colors = ['#F4A460', '#D2691E', '#FF8247', '#EE7942', '#CD6839', '#F4A460', '#D2691E', '#FF8247', '#EE7942', '#CD6839']  # 各部分的颜色
+
+# 创建图形和轴
+fig, ax = plt.subplots(figsize=(15, 15), subplot_kw=dict(aspect="equal"))
+
+# 绘制饼图，设置explode参数以在每个部分之间添加距离
+explode = [0.01] * len(sizes)  # 每个部分都稍微突出一点
+wedges, texts, autotexts = ax.pie(sizes, explode=explode, labels=labels, colors=colors,
+                                  autopct='%1.1f%%', startangle=105, counterclock=False,
+                                  wedgeprops=dict(width=0.3, edgecolor='white'),
+                                  textprops=dict(rotation=45, rotation_mode="anchor", ha="right"))
+
+# 绘制圆环
+centre_circle = plt.Circle((0,0),0.70,fc='white')
+fig.gca().add_artist(centre_circle)
+
+# 设置图形的显示范围，使其成为半圆
+ax.set(aspect="equal", ylim=(-1.5, 1.5), xlim=(-1.5, 1.5))
+
+# 调整百分比标签的位置和倾斜角度
+for autotext in autotexts:
+    autotext.set_color('black')  # 设置文本颜色为黑色
+    autotext.set_size(10)  # 设置文本大小
+    autotext.set_rotation(-25)  # 设置倾斜角度
+
+# 调整年龄段标签的位置和倾斜角度
+for text in texts:
+    text.set_color('black')  # 设置文本颜色为黑色
+    text.set_size(10)  # 设置文本大小
+    text.set_rotation(-25)  # 设置倾斜角度
+
+# 显示图表
+plt.title('受访者年龄分布(岁)')
+plt.tight_layout()
+plt.show()

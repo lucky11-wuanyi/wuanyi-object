@@ -1,0 +1,87 @@
+import pandas as pd
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from scipy.stats import f
+import numpy as np
+
+# 读取Excel文件
+file_path = 'D:/亚健康4型.xlsx'
+data = pd.read_excel(file_path)
+
+# 定义自变量
+independent_vars = [
+    '年龄', '健康意识', '了解程度', '功效及营养需求影响度', '价格及经济条件影响度',
+    '烹饪及食用方式影响度', '品牌与口碑影响度', '消费意愿', '担忧程度', '饮食习惯口味搭配影响度'
+]
+
+# 添加常量项
+X = sm.add_constant(data[independent_vars])
+
+# 指定因变量为“总体满意度”
+dependent_var = '总体满意程度'
+if dependent_var not in data.columns:
+    raise ValueError(f"列名 '{dependent_var}' 不存在于数据集中，请检查数据集的列名。")
+
+y = data[dependent_var]
+
+# 拟合回归模型
+model = sm.OLS(y, X).fit()
+
+# 计算ANOVA表
+ssr = model.ssr
+sst = (y - y.mean()).pow(2).sum()
+df_model = X.shape[1] - 1
+df_resid = y.shape[0] - X.shape[1]
+f_value = (ssr / df_model) / ((model.ssr - ssr) / df_resid)
+p_value = 1 - f.cdf(f_value, df_model, df_resid)
+
+anova_results = pd.DataFrame({
+    'sum_sq': [ssr, (sst - ssr)],
+    'df': [df_model, df_resid],
+    'mean_sq': [ssr / df_model, (sst - ssr) / df_resid],
+    'F': [f_value, np.nan],
+    'PR(>F)': [p_value, np.nan]
+}, index=['reg', 'resid'])
+
+# 计算容差和VIF
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif_data["Tolerance"] = 1 / vif_data["VIF"]
+
+# 保存结果到字典
+results = {
+    'R方': model.rsquared,
+    'ANOVA表': anova_results,
+    '系数表': pd.DataFrame({
+        '未标准化系数 (B)': model.params,
+        '标准错误': model.bse,
+        '标准化系数 (Beta)': model.params / model.bse,
+        't': model.tvalues,
+        '显著性': model.pvalues
+    }),
+    '容差和VIF': vif_data
+}
+
+# 将结果保存到Excel文件
+output_path = 'D:/亚健康4型（结果）.xlsx'
+with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+    # 创建一个工作表名称
+    sheet_name = dependent_var[:31] if len(dependent_var) > 31 else dependent_var
+
+    # 写入R方
+    pd.DataFrame({'R方': [results['R方']]}).to_excel(writer, sheet_name=sheet_name, startrow=0, index=False)
+
+    # 写入ANOVA表
+    results['ANOVA表'].to_excel(writer, sheet_name=sheet_name, startrow=2, index=True)
+
+    # 写入系数表
+    results['系数表'].to_excel(writer, sheet_name=sheet_name, startrow=10, index=False)
+
+    # 在系数表和容差和VIF表之间空一行
+    writer.sheets[sheet_name].append([])
+
+    # 写入容差和VIF
+    results['容差和VIF'].to_excel(writer, sheet_name=sheet_name, startrow=22, index=False)
+
+print(f"结果已保存到 {output_path}")

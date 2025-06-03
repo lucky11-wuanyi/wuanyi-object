@@ -1,0 +1,44 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+
+# 读取Excel文件
+file_path = 'D:/亚健康数据.xlsx'
+data = pd.read_excel(file_path)
+
+# 设置matplotlib参数以使用支持中文的字体
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 或者其他支持中文的字体
+plt.rcParams['axes.unicode_minus'] = False  # 正确显示负号
+
+# 查看数据的前几行
+print("数据的前几行：")
+print(data.head())
+
+# 计算每个年龄和月收入组合的频数
+freq = data.groupby(['年龄', '月收入情况']).size().reset_index(name='频数')
+
+# 创建自定义颜色映射（从天蓝到深蓝）
+colors = [(0.78, 0.91, 1.0), (0.0, 0.0, 0.5)]  # 天蓝色 (0.78, 0.91, 1.0) 到 深蓝色 (0.0, 0.0, 0.5)
+cmap_name = 'custom_blue'
+custom_cmap = LinearSegmentedColormap.from_list(cmap_name, colors)
+
+# 创建散点图
+plt.figure(figsize=(12, 6))
+plt.scatter(freq['年龄'], freq['月收入情况'],
+            s=freq['频数'] * 10,  # 散点大小与频数成正比
+            c=freq['频数'],  # 散点颜色与频数成正比
+            cmap=custom_cmap,  # 使用自定义颜色映射
+            alpha=0.7,
+            vmin=freq['频数'].min() * 1.05,  # 设置颜色映射的最小值
+            vmax=freq['频数'].max() * 0.85)  # 设置颜色映射的最大值，使颜色更深
+
+# 添加颜色条
+plt.colorbar(label='频数')
+
+# 添加标题和标签
+plt.title('年龄与月收入情况散点图')
+plt.xlabel('年龄(岁)')
+plt.ylabel('月收入情况（元）')
+
+# 显示图表
+plt.show()

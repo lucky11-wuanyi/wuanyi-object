@@ -1,0 +1,61 @@
+import numpy as np
+import pandas as pd
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# 从D盘中读取Excel文件
+file_path = 'D:/PLS-SEM_encoded.xlsx'  # 替换为你的Excel文件路径
+data = pd.read_excel(file_path)
+
+# 选择自变量（观测变量）和因变量（潜在变量）
+X = data[['性别', '年龄', '学历', '所从事行业', '婚姻状况', '工作时长', '月收入状况', '健康状态', '健康意识', '饮食月支出', '总体满意程度', '阻碍因素', '价格接受范围',
+          '功效及营养需求影响度','价格及经济条件影响度','烹饪及食用方式影响度', '品牌与口碑影响度','担忧程度']].values
+y = data[['消费意愿', '健康意识', '了解程度']].values
+
+# 定义PLS回归模型
+pls = PLSRegression(n_components=2)  # 选择成分数量
+
+# 拟合模型
+pls.fit(X, y)
+
+# 获取载荷系数
+loadings_X = pls.x_loadings_
+loadings_y = pls.y_loadings_
+
+# 获取X的得分
+X_scores = pls.transform(X)
+
+# 简化的路径系数估计：使用X的得分与y的得分之间的相关系数作为路径系数的估计
+# 注意：这不是真正的路径系数，而是一种简化的估计方法
+y_scores = pls.predict(X)
+path_coefficients = np.corrcoef(X_scores.T, y_scores.T)[0, 1:]
+
+print("载荷系数（X）:")
+print(np.round(loadings_X, 2))
+print("\n载荷系数（Y）:")
+print(np.round(loadings_y, 2))
+print("\n路径系数:")
+print(np.round(path_coefficients, 2))
+
+# 预测
+y_pred = pls.predict(X)
+
+# 计算评估指标
+mse = mean_squared_error(y, y_pred)
+r2 = r2_score(y, y_pred)
+
+print(f'\nMean Squared Error: {mse:.2f}')
+print(f'R^2 Score: {r2:.2f}')
+
+# 如果需要进行交叉验证，可以使用以下代码
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+pls.fit(X_train, y_train)
+y_cv = pls.predict(X_test)
+
+# 计算评估指标
+mse_cv = mean_squared_error(y_test, y_cv)
+r2_cv = r2_score(y_test, y_cv)
+
+print(f'Mean Squared Error (CV): {mse_cv:.2f}')
+print(f'R^2 Score (CV): {r2_cv:.2f}')
